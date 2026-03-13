@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User{
+  id String @id @default(uuid())
+  email String @unique
+  password String 
+  name String?
+  createdAt DateTime @default(now())
+
+  projects Project[]
+  tasks Task[]
+  comments Comment[]
+}
+
+model Project{
+  id String @id @default(uuid())
+  title String
+  ownerId String
+  createdAt DateTime @default(now())
+  owner User @relation(fields: [ownerId],references: [id])
+  tasks Task[]
+}
+
+model Task{
+  id String @id @default(uuid())
+  title String 
+  status String @default("TODO")
+  projectId String
+  assignedTo String
+  project Project @relation(fields: [projectId],references: [id])
+  assignee User? @relation(fields: [assignedTo],references: [id])
+  comments Comment[]
+}
+
+model Comment{
+  id String @id @default(uuid())
+  content String
+  taskId String
+  userId String
+  createdAt DateTime @default(now())
+  task Task @relation(fields: [taskId],references: [id])
+  user User @relation(fields: [userId],references: [id])
+}
+
