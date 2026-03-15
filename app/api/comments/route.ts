@@ -9,11 +9,12 @@ export async function POST(req:Request){
         return NextResponse.json({error:"Unauthorized"},{status:401})
     }
     const body=await req.json()
-    const project=await prisma.project.create({
+    const comment=await prisma.comment.create({
         data:{
-            title:body.title,
-            ownerId:session.user.id
+            content:body.content,
+            taskId:body.taskId,
+            userId:body.userId
         }
     })
-    return NextResponse.json(project)
+    return NextResponse.json(comment)
 }
