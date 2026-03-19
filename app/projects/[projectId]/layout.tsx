@@ -1,5 +1,5 @@
 import React from 'react'
-import Image from "next/image"
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import {
   Sidebar,
@@ -34,27 +34,21 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import {
-  LayoutDashboard,
   FolderKanban,
   Settings,
-  Search,
   FolderOpen,
   ChevronsUpDown,
-  User, 
-  LogOut, 
-  CreditCard, 
-  Sparkles
+  User,
 } from 'lucide-react'
-import { NumberTicker } from "@/components/ui/number-ticker"
+import { NumberTicker } from '@/components/ui/number-ticker'
 import { prisma } from '@/lib/db'
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
-import ProjectsPage from '@/app/projects/page'
-import { LogoutButton } from '@/components/logout-button' // Adjust path if needed
 
-// Define the navigation items for the projects module
-
+// NOTE: Consider renaming this import and extracting the component from page.tsx to components/CreateProjectDialog.tsx
+import CreateProjectDialog from '@/components/create-project-dialog'
+import { LogoutButton } from '@/components/logout-button'
 
 export default async function ProjectsLayout({
   children,
@@ -65,45 +59,37 @@ export default async function ProjectsLayout({
 }) {
   const activeProjectId = (await params).projectId
   const session = await getServerSession(authOptions)
-  const projectNavItems = await prisma.project.findMany({
-    where: {
-      ownerId: session?.user?.id,
-    },
-  })
-  const project=await prisma.project.findUnique({
-    where:{
-      id:activeProjectId
-    },
-    include:{
-      tasks:true
-    }
-  })
-  // Add this right before your return statement
-  const totalTasks = project?.tasks?.length || 0
-  const todoTasks = project?.tasks?.filter((t: any) => t.status === 'TODO' || !t.status).length || 0
-  const inProgressTasks = project?.tasks?.filter((t: any) => t.status === 'INPROGRESS').length || 0
-  const doneTasks = project?.tasks?.filter((t: any) => t.status === 'DONE').length || 0
-  async function handleSubmit(formData: FormData) {
-  // Extract the title directly from the form data
-  const title = formData.get("title") as string
 
-  // Prevent empty submissions (server-side validation)
-  if (!title || !title.trim()) {
-    throw new Error("Title is required")
+  const projectNavItems = await prisma.project.findMany({
+    where: { ownerId: session?.user?.id },
+  })
+
+  const project = await prisma.project.findUnique({
+    where: { id: activeProjectId },
+    include: { tasks: true },
+  })
+
+  const totalTasks = project?.tasks?.length || 0
+  const todoTasks =
+    project?.tasks?.filter((t: any) => t.status === 'TODO' || !t.status)
+      .length || 0
+  const inProgressTasks =
+    project?.tasks?.filter((t: any) => t.status === 'INPROGRESS').length || 0
+  const doneTasks =
+    project?.tasks?.filter((t: any) => t.status === 'DONE').length || 0
+
+  async function handleSubmit(formData: FormData) {
+    'use server'
+    const title = formData.get('title') as string
+
+    if (!title || !title.trim()) {
+      throw new Error('Title is required')
+    }
+
+    const newProjectId = 'generated-uuid-123'
+    redirect(`/projects/${newProjectId}`)
   }
 
-  // 1. Save to your database here
-  // const project = await prisma.project.create({
-  //   data: { title }
-  // })
-  
-  // Simulated database response for this example:
-  const newProjectId = "generated-uuid-123"
-
-  // 2. Redirect the user to the new project page
-  // This replaces your router.push()
-  redirect(`/projects/${newProjectId}`)
-}
   return (
     <SidebarProvider>
       <Sidebar variant="sidebar" collapsible="icon">
@@ -111,8 +97,6 @@ export default async function ProjectsLayout({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg">
-                {/* Changed div to span to fix hydration nesting error */}
-
                 <span className="flex aspect-square size-8 items-center justify-center rounded-lg  text-white">
                   <Image
                     className="bg-transparent"
@@ -122,59 +106,55 @@ export default async function ProjectsLayout({
                     height={30}
                   />
                 </span>
-
-                {/* Changed div to span */}
-
                 <span className="grid flex-1 text-left text-lg leading-tight">
                   <span className="truncate font-semibold text-white">
                     DevHub
                   </span>
                 </span>
-
                 <ChevronsUpDown className="ml-auto size-4 text-zinc-500" />
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
+
         <SidebarContent>
           <SidebarGroup className="pt-4 pb-0">
             <SidebarMenu>
               <SidebarMenuItem>
                 <div className="w-full flex items-center justify-center p-2">
-                  <ProjectsPage />
+                  <CreateProjectDialog />
                 </div>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
+
           <SidebarGroup>
             <SidebarGroupLabel>Your Projects</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {projectNavItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
+                    {/* FIXED: We pass the empty Link to `render`, and place the children purely inside the SidebarMenuButton to avoid duplicate React Nodes. */}
                     <SidebarMenuButton
+                      tooltip={item.title}
                       render={
                         <Link
                           id={`sidebar-link-${item.id}`}
                           href={`/projects/${item.id}`}
-                          // Added border-l-2 to base classes, and rounded-none so it sits flush to the edge
                           className={`flex items-center gap-2 px-4 sm:px-6 py-3 border-b border-border/40 transition-colors rounded-lg border-l-2 w-full ${
                             activeProjectId === item.id
-                              ? 'bg-muted/30 border-l-primary text-foreground' // Red border for active
-                              : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground' // Invisible border for inactive (stops jumping)
+                              ? 'bg-muted/30 border-l-primary text-foreground'
+                              : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                           }`}
-                        >
-                          {activeProjectId === item.id ? (
-                            <FolderOpen className="h-4 w-4 shrink-0 text-foreground" />
-                          ) : (
-                            <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          )}
-                          <span className="truncate">{item.title}</span>
-                        </Link>
+                        />
                       }
-                      tooltip={item.title}
                     >
-                      <span>{item.title}</span>
+                      {activeProjectId === item.id ? (
+                        <FolderOpen className="h-4 w-4 shrink-0 text-foreground" />
+                      ) : (
+                        <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="truncate">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -182,6 +162,8 @@ export default async function ProjectsLayout({
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
+        {/* ... (Rest of your layout remains exactly the same) */}
 
         <SidebarFooter>
           <SidebarMenu>
@@ -193,12 +175,9 @@ export default async function ProjectsLayout({
                       size="lg"
                       className="w-full flex items-center justify-between gap-2 p-2 hover:bg-zinc-800/50 data-[state=open]:bg-zinc-800/50 transition-colors rounded-lg outline-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                     >
-                      {/* User Avatar - Now using Lucide Icon */}
                       <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700/60 text-zinc-400 group-data-[collapsible=icon]:size-8">
                         <User className="size-4" />
                       </div>
-
-                      {/* User Details - Hidden when sidebar collapses */}
                       <div className="flex flex-col items-start overflow-hidden flex-1 group-data-[collapsible=icon]:hidden">
                         <span className="text-[13px] font-medium leading-none text-zinc-200 truncate w-full">
                           {session?.user?.name || 'Developer'}
@@ -207,22 +186,17 @@ export default async function ProjectsLayout({
                           {session?.user?.email || 'Pro Plan'}
                         </span>
                       </div>
-
-                      {/* Trailing Icon - Hidden when sidebar collapses */}
                       <ChevronsUpDown className="size-4 shrink-0 text-zinc-500 group-data-[collapsible=icon]:hidden" />
                     </SidebarMenuButton>
                   }
                 />
 
-                {/* The Dropdown Menu */}
                 <DropdownMenuContent
                   className="w-64 rounded-xl bg-zinc-950/95 backdrop-blur-md border-zinc-800 shadow-2xl p-1"
                   side="top"
                   align="start"
                   sideOffset={8}
                 >
-                  {/* Internal Header replicating the user profile */}
-                  {/* FIX: Wrapped the Label inside a Group to satisfy Base UI */}
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="p-0 font-normal">
                       <div className="flex items-center gap-3 px-2 py-2.5 text-left text-sm">
@@ -240,9 +214,7 @@ export default async function ProjectsLayout({
                       </div>
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
-
                   <DropdownMenuSeparator className="bg-zinc-800/60 mx-1" />
-
                   <DropdownMenuGroup>
                     <DropdownMenuItem className="gap-2 px-2 py-2 cursor-pointer text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/60 focus:bg-zinc-800/60 rounded-lg transition-colors">
                       <User className="size-4 text-zinc-400" />
@@ -253,9 +225,7 @@ export default async function ProjectsLayout({
                       <span>Settings</span>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
-
                   <DropdownMenuSeparator className="bg-zinc-800/60 mx-1" />
-
                   <LogoutButton />
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -264,13 +234,9 @@ export default async function ProjectsLayout({
         </SidebarFooter>
       </Sidebar>
 
-      {/* Main Content Area */}
       <div className="flex flex-1 flex-col min-w-0 bg-background text-foreground transition-all duration-300 ease-in-out">
-        {/* Top Header / Nav */}
         <header className="flex h-14 items-center gap-4 border-b border-border px-4 lg:h-[60px] lg:px-6 flex-none bg-background/95 backdrop-blur z-10">
           <SidebarTrigger className="h-5 w-5" />
-
-          {/* Left Side: Breadcrumbs */}
           <div className="flex-1 overflow-hidden">
             <Breadcrumb>
               <BreadcrumbList className="flex-nowrap whitespace-nowrap">
@@ -279,7 +245,9 @@ export default async function ProjectsLayout({
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 <BreadcrumbItem className="hidden sm:inline-flex">
-                  <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+                  <BreadcrumbLink href={`/projects/${activeProjectId}`}>
+                    Projects
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 <BreadcrumbItem>
@@ -291,9 +259,7 @@ export default async function ProjectsLayout({
             </Breadcrumb>
           </div>
 
-          {/* Right Side: Subtle Stats (Hidden on extra small screens to prevent crowding) */}
           <div className="hidden md:flex items-center gap-4 text-xs">
-            {/* Total */}
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/30 border border-border/50">
               <span className="text-muted-foreground font-medium">
                 Total Tasks
@@ -302,11 +268,7 @@ export default async function ProjectsLayout({
                 <NumberTicker value={totalTasks} />
               </span>
             </div>
-
-            {/* Separator */}
             <div className="h-4 w-px bg-border/60"></div>
-
-            {/* Status Breakdown */}
             <div className="flex items-center gap-3.5">
               <div className="flex items-center gap-1.5" title="To Do">
                 <div className="h-1.5 w-1.5 rounded-full bg-red-500/80"></div>
@@ -314,14 +276,12 @@ export default async function ProjectsLayout({
                   <NumberTicker value={todoTasks} />
                 </span>
               </div>
-
               <div className="flex items-center gap-1.5" title="In Progress">
                 <div className="h-1.5 w-1.5 rounded-full bg-orange-500/80"></div>
                 <span className="text-foreground font-medium">
                   <NumberTicker value={inProgressTasks} />
                 </span>
               </div>
-
               <div className="flex items-center gap-1.5" title="Done">
                 <div className="h-1.5 w-1.5 rounded-full bg-green-500/80"></div>
                 <span className="text-foreground font-medium">
@@ -332,7 +292,6 @@ export default async function ProjectsLayout({
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 w-full h-full overflow-hidden">{children}</main>
       </div>
     </SidebarProvider>
