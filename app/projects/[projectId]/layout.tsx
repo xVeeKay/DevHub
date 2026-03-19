@@ -220,10 +220,6 @@ export default async function ProjectsLayout({
                       <User className="size-4 text-zinc-400" />
                       <span>Account</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2 px-2 py-2 cursor-pointer text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/60 focus:bg-zinc-800/60 rounded-lg transition-colors">
-                      <Settings className="size-4 text-zinc-400" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className="bg-zinc-800/60 mx-1" />
                   <LogoutButton />
