@@ -4,6 +4,9 @@ import "./globals.css";
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from "@/components/ui/sonner"
+import { Providers } from '@/components/providers'
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +34,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} dark`}
     >
       <body>
-        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster />
+        <TooltipProvider><Providers>{children}</Providers></TooltipProvider>
         <SpeedInsights />
         <Analytics />
       </body>

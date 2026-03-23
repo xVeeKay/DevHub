@@ -4,6 +4,6 @@ export default withAuth({
         signIn:"/signin"
     }
 })
-export const config={
-    matcher:["/dashboard/:path*","/projects/:path*"]
+export const config = {
+  matcher: ['/dashboard/:path*', '/projects/:path*', '/profile'],
 }

@@ -109,9 +109,9 @@ export default async function DashboardPage() {
 
             {/* Actions / Profile */}
             <div className="flex items-center gap-3">
-              <button className="flex h-8 w-8 items-center justify-center rounded-full border border-border/20 bg-foreground/10 text-muted-foreground transition-all duration-300 hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_10px_hsl(var(--primary)/0.2)]">
+              <a href='/profile'><button className="flex h-8 w-8 items-center justify-center rounded-full border border-border/20 bg-foreground/10 text-muted-foreground transition-all duration-300 hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_10px_hsl(var(--primary)/0.2)]">
                 <User className="size-4" />
-              </button>
+              </button></a>
             </div>
           </header>
         </div>
