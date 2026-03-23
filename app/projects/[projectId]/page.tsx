@@ -12,9 +12,11 @@ import {
   X,
   AlignLeft,
   User2,
-  Filter, 
-  SlidersHorizontal
+  Filter,
+  SlidersHorizontal,
+  Loader2,
 } from 'lucide-react'
+import { Suspense } from 'react'
 import { TaskActivity } from '@/components/task-activity'
 
 export default async function ProjectWorkspace({
@@ -26,7 +28,6 @@ export default async function ProjectWorkspace({
 }) {
   const { projectId } = await params
   const { taskId } = await searchParams
-
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
@@ -204,15 +205,15 @@ export default async function ProjectWorkspace({
                         autoComplete="off"
                         required
                         className="
-        w-full bg-transparent border border-transparent 
-        hover:bg-zinc-800/50 
-        focus:bg-zinc-900 focus:border-zinc-700/80 
-        focus:ring-0 focus:ring-offset-0 focus:outline-none outline-none
-        text-[13px] rounded-md pl-8 pr-3 py-1.5 
-        text-zinc-200 placeholder:text-zinc-500 
-        transition-all 
-        cursor-pointer focus:cursor-text
-      "
+                          w-full bg-transparent border border-transparent 
+                          hover:bg-zinc-800/50 
+                          focus:bg-zinc-900 focus:border-zinc-700/80 
+                          focus:ring-0 focus:ring-offset-0 focus:outline-none outline-none
+                          text-[13px] rounded-md pl-8 pr-3 py-1.5 
+                          text-zinc-200 placeholder:text-zinc-500 
+                          transition-all 
+                          cursor-pointer focus:cursor-text
+                        "
                       />
                     </div>
 
@@ -226,10 +227,8 @@ export default async function ProjectWorkspace({
           </div>
         </div>
       </div>
-
       {/* --- RESPONSIVE ACTIVITY PANEL --- */}
 
-      {/* 1. Mobile Backdrop: Dims the Kanban board when panel is open on phones */}
       <div
         className={`
           fixed inset-0 bg-black/60 backdrop-blur-sm z-40 sm:hidden transition-opacity duration-300
@@ -239,20 +238,20 @@ export default async function ProjectWorkspace({
         {/* Invisible link overlay: Clicking the dark background on mobile closes the panel */}
         <Link href={`/projects/${projectId}`} className="block w-full h-full" />
       </div>
-
+      
       {/* 2. The Panel Container */}
       <div
         className={`
           fixed sm:absolute z-50 flex flex-col
           transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
           
-          /* MOBILE: Bottom Sheet layout (anchors to bottom, stretches to edges) */
+          /* MOBILE: Bottom Sheet layout */
           bottom-0 left-0 right-0 top-16 
           
           /* DESKTOP/TABLET: Floating right card */
           sm:top-20 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[350px]
           
-          /* Animations: Slides UP on mobile, slides LEFT on desktop */
+          /* Animations */
           ${
             taskId
               ? 'translate-y-0 sm:translate-x-0 opacity-100 pointer-events-auto'
@@ -262,7 +261,7 @@ export default async function ProjectWorkspace({
       >
         {taskId && (
           <div className="flex flex-col h-full bg-zinc-950 sm:bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10">
-            {/* Mobile "Pull Handle" (Visual only, hidden on desktop) */}
+            {/* Mobile "Pull Handle" */}
             <div className="w-full flex justify-center pt-3 pb-1 sm:hidden bg-zinc-900/50">
               <div className="w-12 h-1.5 bg-zinc-700 rounded-full" />
             </div>
@@ -280,10 +279,21 @@ export default async function ProjectWorkspace({
               </Link>
             </div>
 
-            {/* Task Activity Content */}
-            {/* Internal content is already fully responsive thanks to flexbox! */}
+            {/* Task Activity Content wrapped in Suspense */}
             <div className="flex-1 overflow-y-auto no-scrollbar relative">
-              <TaskActivity taskId={taskId} projectId={projectId} />
+              <Suspense
+                fallback={
+                  // This spinner centers itself perfectly in the panel
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="size-6 text-zinc-500 animate-spin" />
+                    <span className="text-xs text-zinc-500 font-medium">
+                      Loading activity...
+                    </span>
+                  </div>
+                }
+              >
+                <TaskActivity taskId={taskId} projectId={projectId} />
+              </Suspense>
             </div>
           </div>
         )}

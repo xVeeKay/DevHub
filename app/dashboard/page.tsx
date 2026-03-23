@@ -21,6 +21,7 @@ import CreateProjectDialog from '@/components/create-project-dialog'
 export default async function DashboardPage() {
   const session= await getServerSession(authOptions)
   if (!session?.user?.id) throw new Error('Unauthorized')
+  await new Promise((resolve) => setTimeout(resolve, 3000))
   const projects=await prisma.project.findMany({
     where:{
       ownerId:session.user.id
