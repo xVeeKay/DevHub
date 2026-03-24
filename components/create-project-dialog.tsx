@@ -14,7 +14,7 @@ import { SpinnerCustom } from '@/components/ui/spinner'
 import { Field, FieldGroup } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 
@@ -22,11 +22,20 @@ interface CreateProjectDialogProps {
   trigger?: React.ReactElement // Accepts any custom button element
 }
 
-export default function CreateProjectDialog({ trigger }: CreateProjectDialogProps) {
+export default function CreateProjectDialog({
+  trigger,
+}: CreateProjectDialogProps) {
   const router = useRouter()
+  // 1. Add the hydration state
+  const [isMounted, setIsMounted] = useState(false)
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [project, setProject] = useState<any>(null)
+
+  // 2. Set mounted to true once the browser takes over
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,7 +49,7 @@ export default function CreateProjectDialog({ trigger }: CreateProjectDialogProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
       })
-      if (!res.ok) throw new Error('Failed to fetch project data! ')
+      if (!res.ok) throw new Error('Failed to fetch project data!')
 
       const data = await res.json()
       setProject(data)
@@ -50,10 +59,9 @@ export default function CreateProjectDialog({ trigger }: CreateProjectDialogProp
       console.error('Failed to create project', error)
     } finally {
       setLoading(false)
-      // Note: If you want to programmatically close the Base UI Dialog here,
-      // you'll need to control its open state via the Dialog component props.
     }
   }
+
   const defaultTrigger = (
     <Button
       className="
@@ -70,11 +78,20 @@ export default function CreateProjectDialog({ trigger }: CreateProjectDialogProp
         Create Project
       </span>
     </Button>
-  )    
+  )
+
+  const activeTrigger = trigger ? trigger : defaultTrigger
+
+  // 3. Hydration Safety Catch
+  // During SSR, we return JUST the button. This prevents ID generation on the server
+  // and completely eliminates the hydration mismatch, while keeping the UI visually perfect.
+  if (!isMounted) {
+    return <>{activeTrigger}</>
+  }
+
   return (
     <Dialog>
-      {/* We use the render prop for Base UI, passing a single button that handles both states via Tailwind */}
-      <DialogTrigger render={trigger ? trigger : defaultTrigger}/>
+      <DialogTrigger render={activeTrigger} />
 
       <DialogContent className="sm:max-w-sm">
         <form onSubmit={handleSubmit}>

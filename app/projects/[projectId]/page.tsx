@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { Suspense } from 'react'
 import { TaskActivity } from '@/components/task-activity'
+import { CreateTaskForm } from '@/components/CreateTaskForm'
 
 export default async function ProjectWorkspace({
   params,
@@ -189,38 +190,10 @@ export default async function ProjectWorkspace({
                   ))}
 
                   {/* Inline Create Task Form for this specific Pillar */}
-                  <form action={createTask} className="mt-2 relative group">
-                    <input type="hidden" name="status" value={col.id} />
-
-                    <div className="relative flex items-center">
-                      {/* Plus Icon */}
-                      <Plus className="absolute left-2 size-4 text-zinc-500 group-focus-within:text-zinc-300 pointer-events-none transition-colors" />
-
-                      {/* The Input: Fixed border styling */}
-                      <input
-                        type="text"
-                        name="title"
-                        id={`new-task-${col.id}`}
-                        placeholder="New task..."
-                        autoComplete="off"
-                        required
-                        className="
-                          w-full bg-transparent border border-transparent 
-                          hover:bg-zinc-800/50 
-                          focus:bg-zinc-900 focus:border-zinc-700/80 
-                          focus:ring-0 focus:ring-offset-0 focus:outline-none outline-none
-                          text-[13px] rounded-md pl-8 pr-3 py-1.5 
-                          text-zinc-200 placeholder:text-zinc-500 
-                          transition-all 
-                          cursor-pointer focus:cursor-text
-                        "
-                      />
-                    </div>
-
-                    <button type="submit" className="hidden">
-                      Submit
-                    </button>
-                  </form>
+                  <CreateTaskForm
+                    columnId={col.id}
+                    createTaskAction={createTask}
+                  />
                 </div>
               </div>
             ))}
@@ -238,7 +211,7 @@ export default async function ProjectWorkspace({
         {/* Invisible link overlay: Clicking the dark background on mobile closes the panel */}
         <Link href={`/projects/${projectId}`} className="block w-full h-full" />
       </div>
-      
+
       {/* 2. The Panel Container */}
       <div
         className={`
