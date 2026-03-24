@@ -1,28 +1,33 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import React from 'react'
+import React, { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import {
-  Plus,
-  FolderKanban,
-  Search,
-  MoreVertical,
-  Clock,
-  User,
-} from 'lucide-react'
+import { Plus, FolderKanban, Clock, User, Loader2 } from 'lucide-react'
 import { ShootingStars } from '@/components/ui/shooting-stars'
 import { timeAgo } from '@/lib/utils'
 import CreateProjectDialog from '@/components/create-project-dialog'
+import SearchBar from '@/components/SearchBar'
+import { ProjectActions } from '@/components/ProjectActions'
+import { AuroraText } from '@/components/ui/aurora-text'
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) throw new Error('Unauthorized')
-
+// 1. We extract the data fetching into its own component.
+// This allows the main page to load instantly and use Suspense for the grid.
+async function ProjectList({
+  userId,
+  query,
+}: {
+  userId: string
+  query: string
+}) {
   const projects = await prisma.project.findMany({
     where: {
-      ownerId: session.user.id,
+      ownerId: userId,
+      title: {
+        contains: query,
+        mode: 'insensitive',
+      },
     },
     include: {
       tasks: true,
@@ -31,6 +36,65 @@ export default async function DashboardPage() {
       updatedAt: 'desc',
     },
   })
+
+  if (projects.length === 0) {
+    return (
+      <div className="col-span-full flex h-[160px] flex-col items-center justify-center rounded-xl border border-dashed border-border/40 bg-card/10 text-muted-foreground">
+        <p className="text-sm">No projects found.</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {projects.map((project) => (
+        <Link
+          href={`/projects/${project.id}`}
+          key={project.id}
+          className="block w-full"
+        >
+          <div className="group flex h-[160px] flex-col justify-between rounded-xl border border-border/40 bg-card/40 backdrop-blur-md p-5 transition-all duration-300 hover:border-primary/30 hover:bg-card/70 hover:shadow-[0_8px_30px_rgba(158,0,255,0.15)] hover:-translate-y-1">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted/50 border border-border/40 shadow-sm backdrop-blur text-foreground transition-colors group-hover:bg-muted/80">
+                  <FolderKanban className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium text-foreground line-clamp-1">
+                    {project.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <FolderKanban className="size-3.5" />
+                    {project.tasks?.length || 0} tasks
+                  </p>
+                </div>
+              </div>
+
+              <ProjectActions projectId={project.id} />
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border/30 pt-4 mt-2">
+              <Clock className="size-3.5" />
+              Updated {timeAgo(project.updatedAt)}
+            </div>
+          </div>
+        </Link>
+      ))}
+    </>
+  )
+}
+
+// 2. The Main Page Layout
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) throw new Error('Unauthorized')
+
+  const params = await searchParams
+  const query = params?.q ?? ''
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans relative overflow-hidden">
@@ -82,32 +146,31 @@ export default async function DashboardPage() {
 
       {/* Main UI Wrapper */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Top Navigation */}
-        <div className="sticky top-4 z-40 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <header className="flex h-12 items-center justify-between rounded-full border border-border/30 bg-background/40 px-4 sm:px-5 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.5),0_0_15px_rgba(255,255,255,0.04)] transition-all duration-300">
-            <div className="flex items-center gap-2.5 group cursor-pointer">
-              <div className="flex aspect-square size-7 items-center justify-center rounded-full bg-foreground/10 border border-border/20 transition-all duration-300 group-hover:bg-primary/20 group-hover:border-primary/30 group-hover:scale-105">
-                <Image
-                  className="bg-transparent"
-                  src={'/logo(transparent).png'}
-                  alt="DevHub Logo"
-                  width={30}
-                  height={30}
-                />
-              </div>
-              <span className="text-base font-semibold tracking-wide text-foreground">
-                DevHub
-              </span>
+        {/* FLOATING HEADER: Stripped the border/box, now it floats organically */}
+        <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 group cursor-pointer">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-full bg-foreground/5 border border-border/20 backdrop-blur-sm transition-all duration-300 group-hover:bg-primary/20 group-hover:border-primary/30 group-hover:scale-105">
+              <Image
+                className="bg-transparent"
+                src={'/logo(transparent).png'}
+                alt="DevHub Logo"
+                width={20}
+                height={20}
+              />
             </div>
-            <div className="flex items-center gap-3">
-              <Link href="/profile">
-                <button className="flex h-8 w-8 items-center justify-center rounded-full border border-border/20 bg-foreground/10 text-muted-foreground transition-all duration-300 hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_10px_hsl(var(--primary)/0.2)]">
-                  <User className="size-4" />
-                </button>
-              </Link>
-            </div>
-          </header>
-        </div>
+            <span className="text-base font-semibold tracking-wide text-foreground">
+              DevHub
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link href="/profile">
+              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-border/20 bg-foreground/5 backdrop-blur-sm text-muted-foreground transition-all duration-300 hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.2)]">
+                <User className="size-4" />
+              </button>
+            </Link>
+          </div>
+        </header>
 
         {/* Main Content */}
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex-1">
@@ -115,29 +178,18 @@ export default async function DashboardPage() {
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-10">
             <div className="space-y-1.5">
               <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-                Welcome back, {session.user.name?.split(' ')[0] || 'Developer'}
+                Welcome back, <AuroraText> {session.user.name?.split(' ')[0] || 'Developer'} </AuroraText>
               </h1>
               <p className="text-sm text-muted-foreground">
                 Select a project to continue working or create a new one.
               </p>
             </div>
-
-            {/* Modern, Responsive Search Bar */}
-            <div className="w-full md:w-auto shrink-0">
-              <div className="relative group w-full md:w-[320px]">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary z-10 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search projects..."
-                  className="h-10 w-full rounded-xl border border-border/50 bg-background/50 backdrop-blur-md pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-all hover:border-border hover:bg-background/80 focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-                />
-              </div>
-            </div>
+            <SearchBar />
           </div>
 
           {/* Projects Grid */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {/* Create New Project Card */}
+            {/* Create New Project Card - Always visible instantly */}
             <CreateProjectDialog
               trigger={
                 <button className="group flex h-[160px] flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-border/60 bg-muted/10 backdrop-blur-sm transition-all hover:border-primary/50 hover:bg-muted/30 hover:shadow-[0_0_20px_rgba(158,0,255,0.1)] w-full">
@@ -151,45 +203,17 @@ export default async function DashboardPage() {
               }
             />
 
-            {/* Existing Projects */}
-            {projects.map((project) => (
-              <Link
-                href={`/projects/${project.id}`}
-                key={project.id}
-                className="block w-full"
-              >
-                {/* UPDATED: hover:shadow now uses rgba(158,0,255,0.15) 
-                   to match your primary purple accent.
-                */}
-                <div className="group flex h-[160px] flex-col justify-between rounded-xl border border-border/40 bg-card/40 backdrop-blur-md p-5 transition-all duration-300 hover:border-primary/30 hover:bg-card/70 hover:shadow-[0_8px_30px_rgba(158,0,255,0.15)] hover:-translate-y-1">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted/50 border border-border/40 shadow-sm backdrop-blur text-foreground transition-colors group-hover:bg-muted/80">
-                        <FolderKanban className="size-5" />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-medium text-foreground line-clamp-1">
-                          {project.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <FolderKanban className="size-3.5" />
-                          {project.tasks?.length || 0} tasks
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground opacity-0 group-hover:opacity-100 transition-all">
-                      <MoreVertical className="size-4" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border/30 pt-4 mt-2">
-                    <Clock className="size-3.5" />
-                    Updated {timeAgo(project.updatedAt)}
-                  </div>
+            {/* Suspense Boundary: Shows spinner while fetching or searching */}
+            <Suspense
+              key={query} // The key ensures Suspense re-triggers when the search query changes
+              fallback={
+                <div className="col-span-full sm:col-span-1 lg:col-span-2 xl:col-span-3 flex h-[160px] items-center justify-center rounded-xl border border-border/10 bg-card/5 backdrop-blur-sm">
+                  <Loader2 className="size-6 animate-spin text-primary/70" />
                 </div>
-              </Link>
-            ))}
+              }
+            >
+              <ProjectList userId={session.user.id} query={query} />
+            </Suspense>
           </div>
         </main>
       </div>
