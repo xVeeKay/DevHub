@@ -4,7 +4,6 @@ import { useRef } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Plus, Loader2 } from 'lucide-react'
 
-// This inner component handles the loading state automatically
 function TaskInput() {
   const { pending } = useFormStatus()
 

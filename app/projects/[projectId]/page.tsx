@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
+import { TaskCard } from '@/components/TaskCard'
 import {
   MessageSquare,
   CircleDashed,
@@ -151,15 +152,7 @@ export default async function ProjectWorkspace({
                 <div className="flex-1 overflow-y-auto no-scrollbar pb-4 space-y-2.5">
                   {col.tasks.map((task: any) => (
                     // Clicking a task updates the URL, which slides out the panel
-                    <Link
-                      key={task.id}
-                      href={`/projects/${projectId}?taskId=${task.id}`}
-                      className={`
-                        block group relative bg-zinc-900/60 border rounded-lg p-3 transition-all duration-200
-                        hover:bg-zinc-800/80 hover:border-zinc-700 hover:shadow-md cursor-default
-                        ${taskId === task.id ? 'border-zinc-600 ring-1 ring-zinc-700/50' : 'border-zinc-800/80'}
-                      `}
-                    >
+                    <TaskCard key={task.id} task={task}>
                       {/* Task Title Row */}
                       <div className="flex items-start gap-2.5 mb-3">
                         <div className="mt-0.5">{col.icon}</div>
@@ -186,7 +179,7 @@ export default async function ProjectWorkspace({
                           <User2 className="size-3" />
                         </div>
                       </div>
-                    </Link>
+                    </TaskCard>
                   ))}
 
                   {/* Inline Create Task Form for this specific Pillar */}
@@ -255,8 +248,8 @@ export default async function ProjectWorkspace({
             {/* Task Activity Content wrapped in Suspense */}
             <div className="flex-1 overflow-y-auto no-scrollbar relative">
               <Suspense
+                key={taskId}
                 fallback={
-                  // This spinner centers itself perfectly in the panel
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                     <Loader2 className="size-6 text-zinc-500 animate-spin" />
                     <span className="text-xs text-zinc-500 font-medium">
