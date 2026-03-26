@@ -174,9 +174,10 @@ export default function ProfilePage() {
         </div>
 
         {/* Modular Password Component Container */}
-        <div className="bg-card text-card-foreground border border-border rounded-xl overflow-hidden shadow-sm p-6 md:p-8">
-          <ResetPassword />
-        </div>
+        {/* <div className="bg-card text-card-foreground border border-border rounded-xl overflow-hidden shadow-sm p-6 md:p-8">
+          
+        </div> */}
+        <ResetPassword />
       </div>
     </div>
   )

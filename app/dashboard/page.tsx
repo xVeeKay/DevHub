@@ -40,9 +40,7 @@ async function ProjectList({
 
   if (projects.length === 0) {
     return (
-      <div className="col-span-full flex h-[160px] flex-col items-center justify-center rounded-xl border border-dashed border-border/40 bg-card/10 text-muted-foreground">
-        <p className="text-sm">No projects found.</p>
-      </div>
+      null
     )
   }
 
