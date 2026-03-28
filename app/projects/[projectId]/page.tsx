@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
 import { TaskCard } from '@/components/TaskCard'
+import { KanbanBoard } from '@/components/KanbanBoard'
 import {
   MessageSquare,
   CircleDashed,
@@ -83,24 +84,37 @@ export default async function ProjectWorkspace({
   const columns = [
     {
       id: 'TODO',
-      title: 'Todo',
-      tasks: todos,
-      icon: <CircleDashed className="size-4 text-zinc-500" />,
-      dotColor: 'bg-zinc-500',
+      title: 'To-do',
+      tasks: project.tasks.filter((t: any) => !t.status || t.status === 'TODO'),
+      // Deep dark tints for the minimal dark UI
+      theme: {
+        bg: 'bg-red-500/5',
+        border: 'border-red-500/10',
+        pillBg: 'bg-red-500/10',
+        text: 'text-red-400',
+      }
     },
     {
       id: 'INPROGRESS',
-      title: 'In Progress',
-      tasks: inProgress,
-      icon: <CircleDot className="size-4 text-amber-500" />,
-      dotColor: 'bg-amber-500',
+      title: 'In progress',
+      tasks: project.tasks.filter((t: any) => t.status === 'INPROGRESS'),
+      theme: {
+        bg: 'bg-orange-500/5',
+        border: 'border-orange-500/10',
+        pillBg: 'bg-orange-500/10',
+        text: 'text-orange-400',
+      }
     },
     {
       id: 'DONE',
-      title: 'Done',
-      tasks: done,
-      icon: <CheckCircle2 className="size-4 text-indigo-500" />,
-      dotColor: 'bg-indigo-500',
+      title: 'Complete',
+      tasks: project.tasks.filter((t: any) => t.status === 'DONE'),
+      theme: {
+        bg: 'bg-blue-500/5',
+        border: 'border-blue-500/10',
+        pillBg: 'bg-blue-500/10',
+        text: 'text-blue-400',
+      }
     },
   ]
 
@@ -127,71 +141,7 @@ export default async function ProjectWorkspace({
         </div>
 
         {/* Board Container */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex h-full p-6 gap-6 min-w-max">
-            {/* Map over our 3 Kanban Pillars */}
-            {columns.map((col) => (
-              <div
-                key={col.id}
-                className="w-[320px] flex flex-col flex-shrink-0 h-full"
-              >
-                {/* Pillar Header */}
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <div className="flex items-center gap-2">
-                    {col.icon}
-                    <h3 className="text-[13px] font-medium text-zinc-300">
-                      {col.title}
-                    </h3>
-                    <span className="text-xs text-zinc-500 font-medium ml-1">
-                      {col.tasks.length}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Pillar Tasks Scroll Area */}
-                <div className="flex-1 overflow-y-auto no-scrollbar pb-4 space-y-2.5">
-                  {col.tasks.map((task: any) => (
-                    // Clicking a task updates the URL, which slides out the panel
-                    <TaskCard key={task.id} task={task}>
-                      {/* Task Title Row */}
-                      <div className="flex items-start gap-2.5 mb-3">
-                        <div className="mt-0.5">{col.icon}</div>
-                        <span className="text-[13px] leading-tight font-medium text-zinc-200 group-hover:text-white transition-colors line-clamp-2">
-                          {task.title}
-                        </span>
-                      </div>
-
-                      {/* Task Footer Metrics (Comments, Assignee) */}
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1.5 text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                            <MessageSquare className="size-3.5" />
-                            <span className="text-[11px] font-medium">
-                              {task._count.comments}
-                            </span>
-                          </span>
-                          <span className="flex items-center gap-1.5 text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                            <AlignLeft className="size-3.5" />
-                          </span>
-                        </div>
-                        {/* Fake Avatar for aesthetic, replace with actual user image if available */}
-                        <div className="flex items-center justify-center size-5 rounded-full bg-zinc-800 border border-zinc-700 text-[9px] font-bold text-zinc-400">
-                          <User2 className="size-3" />
-                        </div>
-                      </div>
-                    </TaskCard>
-                  ))}
-
-                  {/* Inline Create Task Form for this specific Pillar */}
-                  <CreateTaskForm
-                    columnId={col.id}
-                    createTaskAction={createTask}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <KanbanBoard initialColumns={columns} projectId={projectId} />
       </div>
       {/* --- RESPONSIVE ACTIVITY PANEL --- */}
 

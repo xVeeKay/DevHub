@@ -39,6 +39,7 @@ import {
   FolderOpen,
   ChevronsUpDown,
   User,
+  LayoutDashboard,
 } from 'lucide-react'
 import { NumberTicker } from '@/components/ui/number-ticker'
 import { prisma } from '@/lib/db'
@@ -96,23 +97,25 @@ export default async function ProjectsLayout({
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg">
-                <span className="flex aspect-square size-8 items-center justify-center rounded-lg  text-white">
-                  <Image
-                    className="bg-transparent"
-                    src={'/logo(transparent).png'}
-                    alt="DevHub Logo"
-                    width={30}
-                    height={30}
-                  />
-                </span>
-                <span className="grid flex-1 text-left text-lg leading-tight">
-                  <span className="truncate font-semibold text-white">
-                    DevHub
+              <Link href="/dashboard" className="block w-full">
+                <SidebarMenuButton size="lg">
+                  <span className="flex aspect-square size-8 items-center justify-center rounded-lg text-white">
+                    <Image
+                      className="bg-transparent"
+                      src={'/logo(transparent).png'}
+                      alt="DevHub Logo"
+                      width={30}
+                      height={30}
+                    />
                   </span>
-                </span>
-                <ChevronsUpDown className="ml-auto size-4 text-zinc-500" />
-              </SidebarMenuButton>
+                  <span className="grid flex-1 text-left text-lg leading-tight">
+                    <span className="truncate font-semibold text-white">
+                      DevHub
+                    </span>
+                  </span>
+                  <ChevronsUpDown className="ml-auto size-4 text-zinc-500" />
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
@@ -216,6 +219,12 @@ export default async function ProjectsLayout({
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className="bg-zinc-800/60 mx-1" />
                   <DropdownMenuGroup>
+                    <Link href="/dashboard" className="w-full">
+                      <DropdownMenuItem className="flex items-center gap-2 px-2 py-2 cursor-pointer text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/60 focus:bg-zinc-800/60 rounded-lg transition-colors">
+                        <LayoutDashboard className="size-4 text-zinc-400" />
+                        <span>Dashboard</span>
+                      </DropdownMenuItem>
+                    </Link>
                     <Link href="/profile" className="w-full">
                       <DropdownMenuItem className="flex items-center gap-2 px-2 py-2 cursor-pointer text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/60 focus:bg-zinc-800/60 rounded-lg transition-colors">
                         <User className="size-4 text-zinc-400" />
