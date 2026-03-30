@@ -44,3 +44,7 @@ git clone https://github.com/xveekay/devhub
 cd devhub
 npm install
 npm run dev
+
+Note:
+Email functionality uses Resend test domain.
+Password reset emails are configured for demo purposes.
