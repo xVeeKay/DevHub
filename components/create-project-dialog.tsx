@@ -31,11 +31,46 @@ export default function CreateProjectDialog({
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [project, setProject] = useState<any>(null)
+  const [search, setSearch] = useState('')
+  const [results, setResults] = useState<any[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
 
   // 2. Set mounted to true once the browser takes over
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  useEffect(()=>{
+    const delay=setTimeout(async()=>{
+      if(!search.trim()){
+        setResults([]);
+        return
+      }
+      setSearching(true)
+      try {
+        const res=await fetch(`/api/user/search?q=${search}`)
+        const data=await res.json()
+        setResults(data)
+      } catch (error) {
+        console.error(error)
+      } finally{
+        setSearching(false)
+      }
+    },400)
+    return ()=>clearTimeout(delay)
+  },[search])
+
+  function addUser(user:any){
+    if(selectedUsers.find(u=> u.id===user.id)) return
+    setSelectedUsers(prev=>[...prev,user])
+    setSearch("")
+    setResults([])
+  }
+
+  function removeUser(id:string){
+    setSelectedUsers(prev=>prev.filter(u=>u.id!==id))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -47,7 +82,7 @@ export default function CreateProjectDialog({
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title,selectedUsers:selectedUsers.map(u=>u.id) }),
       })
       if (!res.ok) throw new Error('Failed to fetch project data!')
 
@@ -102,17 +137,91 @@ export default function CreateProjectDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup className="py-4">
+          <FieldGroup className="py-4 space-y-5">
+            {/* TITLE */}
             <Field>
               <Label htmlFor="project-title">Title</Label>
               <Input
                 id="project-title"
-                name="name"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. My Awesome SaaS"
                 required
               />
+            </Field>
+
+            {/* ADD MEMBERS */}
+            <Field className="space-y-2">
+              <Label>Add Members</Label>
+
+              <div className="relative">
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search teammates..."
+                  className="pr-10"
+                />
+
+                {searching && (
+                  <div className="absolute right-3 top-2.5">
+                    <SpinnerCustom />
+                  </div>
+                )}
+              </div>
+
+              {/* SEARCH RESULTS */}
+              {results.length > 0 && (
+                <div
+                  className="
+                    mt-2 max-h-40 overflow-y-auto rounded-md
+                    border border-zinc-800 bg-zinc-900
+                  "
+                >
+                  {results.map((user) => (
+                    <button
+                      type="button"
+                      key={user.id}
+                      onClick={() => addUser(user)}
+                      className="
+              w-full text-left px-3 py-2
+              hover:bg-zinc-800 transition
+              text-sm flex justify-between
+            "
+                    >
+                      <span>{user.name}</span>
+                      <span className="text-zinc-500 text-xs">
+                        {user.email}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* SELECTED USERS */}
+              {selectedUsers.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {selectedUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="
+              flex items-center gap-2
+              bg-zinc-800 text-zinc-200
+              px-3 py-1 rounded-full text-sm
+            "
+                    >
+                      {user.name}
+
+                      <button
+                        type="button"
+                        onClick={() => removeUser(user.id)}
+                        className="text-zinc-400 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Field>
           </FieldGroup>
 

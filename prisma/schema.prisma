@@ -16,9 +16,10 @@ model User{
   resetToken        String?
   resetTokenExpiry  DateTime?
 
-  projects Project[]
+  ownedProjects Project[] @relation("ProjectOwner")
   tasks Task[]
   comments Comment[]
+  projectMemberships ProjectMember[]
 }
 
 model Project{
@@ -27,8 +28,28 @@ model Project{
   ownerId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
-  owner User @relation(fields: [ownerId],references: [id])
+  owner User @relation("ProjectOwner",fields: [ownerId],references: [id])
+
+  members ProjectMember[]
   tasks Task[]
+}
+
+model ProjectMember{
+  id String @id @default(cuid())
+  userId String
+  projectId String
+  role ProjectRole
+
+  user User @relation(fields: [userId],references: [id])
+  project Project @relation(fields: [projectId],references: [id])
+
+  @@unique([userId,projectId])
+}
+
+enum ProjectRole{
+  OWNER
+  ADMIN
+  MEMBER
 }
 
 model Task{

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useEffect } from 'react'
+import { socket } from '@/lib/socket'
 import {
   DragDropContext,
   Droppable,
@@ -28,6 +29,80 @@ export function KanbanBoard({
 
   // NEW: State to track if we are actively dragging
   const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    socket.connect()
+
+    socket.on('connect', () => {
+      console.log('✅ Connected:', socket.id)
+    })
+
+    socket.on('connect_error', (err) => {
+      console.log('❌ Connection error:', err.message)
+    })
+
+    return () => {
+      socket.off('connect')
+      socket.off('connect_error')
+    }
+  }, [])
+
+  useEffect(()=>{
+    socket.emit("join-project",projectId)
+  },[projectId])
+
+  useEffect(() => {
+    // TASK CREATED EVENT
+    const handleTaskCreated = (task: any) => {
+      setColumns((prevColumns) =>
+        prevColumns.map((col) =>
+          String(col.id) === String(task.status)
+            ? { ...col, tasks: [...col.tasks, task] }
+            : col
+        )
+      )
+    }
+
+    // TASK MOVED EVENT
+    const handleTaskUpdated = ({
+      taskId,
+      newStatus,
+    }: {
+      taskId: string
+      newStatus: string
+    }) => {
+      setColumns((prevColumns) => {
+        let movedTask: any = null
+
+        // remove from old column
+        const updated = prevColumns.map((col) => {
+          const filtered = col.tasks.filter((t: any) => {
+            if (String(t.id) === taskId) {
+              movedTask = { ...t, status: newStatus }
+              return false
+            }
+            return true
+          })
+          return { ...col, tasks: filtered }
+        })
+
+        // insert into new column
+        return updated.map((col) =>
+          String(col.id) === newStatus && movedTask
+            ? { ...col, tasks: [...col.tasks, movedTask] }
+            : col
+        )
+      })
+    }
+
+    socket.on('task-created', handleTaskCreated)
+    socket.on('task-updated', handleTaskUpdated)
+
+    return () => {
+      socket.off('task-created', handleTaskCreated)
+      socket.off('task-updated', handleTaskUpdated)
+    }
+  }, [])
 
   useEffect(() => {
     setIsMounted(true)
@@ -108,6 +183,11 @@ export function KanbanBoard({
     if (source.droppableId !== destination.droppableId) {
       startTransition(() => {
         updateTaskStatus(draggedTask.id, destination.droppableId, projectId)
+        socket.emit("task-updated",{
+          taskId:draggedTask.id,
+          newStatus:destination.droppableId,
+          projectId,
+        })
       })
     }
 
@@ -238,7 +318,11 @@ export function KanbanBoard({
                             )
 
                             // 2. Save to database in the background
-                            await createTask(projectId, title, col.id)
+                            const newTask=await createTask(projectId, title, col.id)
+                            socket.emit("task-created",{
+                              task:newTask,
+                              projectId
+                            })  
                           }}
                         />
                       </div>

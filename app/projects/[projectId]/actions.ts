@@ -25,13 +25,19 @@ export async function createTask(
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) throw new Error('Unauthorized')
 
-  await prisma.task.create({
+  const task=await prisma.task.create({
     data: {
       title,
       status,
       projectId,
       assignedTo: session.user.id,
     },
+    include:{
+      _count:{
+        select:{comments:true}
+      }
+    }
   })
   revalidatePath(`/projects/${projectId}`)
+  return task
 }

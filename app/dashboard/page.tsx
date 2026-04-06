@@ -24,14 +24,25 @@ async function ProjectList({
 }) {
   const projects = await prisma.project.findMany({
     where: {
-      ownerId: userId,
-      title: {
-        contains: query,
-        mode: 'insensitive',
-      },
+      AND: [
+        {
+          members: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+        {
+          title: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+      ],
     },
     include: {
       tasks: true,
+      owner:true
     },
     orderBy: {
       updatedAt: 'desc',
@@ -55,17 +66,41 @@ async function ProjectList({
           <div className="group flex h-[160px] flex-col justify-between rounded-xl border border-border/40 bg-card/40 backdrop-blur-md p-5 transition-all duration-300 hover:border-primary/30 hover:bg-card/70 hover:shadow-[0_8px_30px_rgba(158,0,255,0.15)] hover:-translate-y-1">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3.5">
+                {/* Icon Container */}
                 <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted/50 border border-border/40 shadow-sm backdrop-blur text-foreground transition-colors group-hover:bg-muted/80">
                   <FolderKanban className="size-5" />
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
+                  {/* Project Title */}
                   <h3 className="text-sm font-medium text-foreground line-clamp-1">
                     {project.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <FolderKanban className="size-3.5" />
-                    {project.tasks?.length || 0} tasks
-                  </p>
+
+                  {/* Metadata Row: Tasks & Creator */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {/* Task Count */}
+                    <div className="flex items-center gap-1.5">
+                      <FolderKanban className="size-3.5" />
+                      <span>{project.tasks?.length || 0} tasks</span>
+                    </div>
+
+                    {/* Separator Dot (Hidden on very small screens if wrapped) */}
+                    <span className="hidden sm:inline w-1 h-1 rounded-full bg-border" />
+
+                    {/* Created By Section */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <span className="text-[10px] font-bold text-primary uppercase">
+                          {project.owner.name?.charAt(0) || 'U'}
+                        </span>
+                      </div>
+                      <span className="opacity-80">by</span>
+                      <span className="font-medium text-foreground/80">
+                        {project.owner.name || 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
