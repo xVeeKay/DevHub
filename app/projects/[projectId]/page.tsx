@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
 import { TaskCard } from '@/components/TaskCard'
-import { KanbanBoard } from '@/components/KanbanBoard'
+import { WorkspaceRealtime } from '@/components/WorkspaceRealtime'
 import {
   MessageSquare,
   CircleDashed,
@@ -42,6 +42,17 @@ export default async function ProjectWorkspace({
         },
         orderBy: { createdAt: 'desc' }, // Shows newest tasks first
       },
+      members: {
+        select: {
+          user: {
+            // Access the 'user' relation inside ProjectMember
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   })
 
@@ -49,6 +60,10 @@ export default async function ProjectWorkspace({
     return <div className="p-8 text-zinc-400">Project not found</div>
   }
 
+  const members=project.members.map((m)=>({
+    id:m.user.id,
+    name:m.user.name
+  }))
   // 1. Group Tasks by Status for the Kanban layout
   // Note: Adjust the status strings if your database uses lowercase or different casing
   const todos = project.tasks.filter(
@@ -141,7 +156,11 @@ export default async function ProjectWorkspace({
         </div>
 
         {/* Board Container */}
-        <KanbanBoard initialColumns={columns} projectId={projectId} />
+        <WorkspaceRealtime
+          projectId={projectId}
+          initialColumns={columns}
+          members={members}
+        />
       </div>
       {/* --- RESPONSIVE ACTIVITY PANEL --- */}
 
