@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { socket } from '@/lib/socket'
 import { Activity, ArrowUp, MessageSquareDashed } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 export function TaskActivityClient({
   taskId,
@@ -15,6 +16,8 @@ export function TaskActivityClient({
 }) {
   const [comments, setComments] = useState(initialComments)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [typingUsers,setTypingUsers]=useState<any[]>([])
+  const { data: session, status } = useSession()
 
   // ✅ Join project room
   useEffect(() => {
@@ -36,6 +39,20 @@ export function TaskActivityClient({
       socket.off('comment-added', handleCommentAdded)
     }
   }, [taskId])
+
+  useEffect(()=>{
+    const handleTyping=(user:any)=>{
+      setTypingUsers(prev=>{
+        if(prev.find(u=>u.id===user.id)) return prev
+        return [...prev,user]
+      })
+    }
+    const handleStopTyping = (userId: string) => {
+      setTypingUsers((prev) => prev.filter((u) => u.id !== userId))
+    }
+    socket.on("user-typing",handleTyping)
+    socket.on("user-stop-typing",handleStopTyping)
+  },[])
 
   // ✅ Submit comment
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -92,6 +109,23 @@ export function TaskActivityClient({
         </p>
       </div>
     )
+  }
+  let typingTimeout:any
+  function handleCommentTyping(){
+    socket.emit("typing-start",{
+      projectId,
+      user:{
+        id:session?.user?.id,
+        name:session?.user?.name
+      }
+    })
+    clearTimeout(typingTimeout)
+    typingTimeout=setTimeout(()=>{
+      socket.emit('typing-stop', {
+        projectId,
+        userId: session?.user?.id,
+      })
+    },1500)
   }
 
   return (
@@ -150,6 +184,23 @@ export function TaskActivityClient({
       {/* INPUT */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pt-10 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent pointer-events-none">
         <div className="pointer-events-auto">
+          {typingUsers.length > 0 && (
+            <div className="px-3 pb-2 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
+              {/* The Bouncing Dots */}
+              <div className="flex gap-1">
+                <span className="size-1 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="size-1 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="size-1 bg-zinc-500 rounded-full animate-bounce"></span>
+              </div>
+
+              {/* The Dynamic Text */}
+              <span className="text-[11px] font-medium text-zinc-500 italic">
+                {typingUsers.length === 1
+                  ? `${typingUsers[0].name} is typing`
+                  : `${typingUsers.length} people are typing`}
+              </span>
+            </div>
+          )}
           <form
             onSubmit={handleSubmit}
             className="relative flex items-end gap-2 bg-zinc-900 border border-zinc-800/80 focus-within:border-zinc-700 focus-within:bg-zinc-900/90 rounded-xl p-1.5 shadow-lg transition-all"
@@ -163,6 +214,7 @@ export function TaskActivityClient({
               autoComplete="off"
               className="flex-1 bg-transparent text-[13px] text-zinc-200 placeholder:text-zinc-500 px-3 py-1.5 outline-none"
               required
+              onChange={handleCommentTyping}
             />
 
             <button

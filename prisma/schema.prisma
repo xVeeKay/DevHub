@@ -41,7 +41,7 @@ model ProjectMember{
   role ProjectRole
 
   user User @relation(fields: [userId],references: [id])
-  project Project @relation(fields: [projectId],references: [id])
+  project Project @relation(fields: [projectId],references: [id],onDelete: Cascade)
 
   @@unique([userId,projectId])
 }
