@@ -65,14 +65,17 @@ export default async function ProjectsLayout({
     where: { ownerId: session?.user?.id },
   })
 
-  const joinedProjectNavItems=await prisma.project.findMany({
-    where:{
-      members:{
-        some:{
-          userId:session?.user?.id
-        }
-      }
-    }
+  const joinedProjectNavItems = await prisma.project.findMany({
+    where: {
+      members: {
+        some: {
+          userId: session?.user?.id,
+        },
+      },
+      ownerId: {
+        not: session?.user?.id,
+      },
+    },
   })
 
   const project = await prisma.project.findUnique({
