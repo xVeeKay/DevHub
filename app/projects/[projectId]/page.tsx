@@ -36,16 +36,34 @@ export default async function ProjectWorkspace({
     include: {
       tasks: {
         include: {
+          // 1. Get the user assigned to the task
+          assignee: {
+            select: {
+              id: true,
+              name: true,
+              // image: true, // Uncomment if you add an image field to User later
+            },
+          },
+          // 2. Get only the most recent comment
+          comments: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            include: {
+              user: {
+                select: { name: true },
+              },
+            },
+          },
+          // 3. Keep your existing comment count
           _count: {
             select: { comments: true },
           },
         },
-        orderBy: { createdAt: 'desc' }, // Shows newest tasks first
+        orderBy: { createdAt: 'desc' },
       },
       members: {
         select: {
           user: {
-            // Access the 'user' relation inside ProjectMember
             select: {
               id: true,
               name: true,

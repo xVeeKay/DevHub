@@ -65,6 +65,16 @@ export default async function ProjectsLayout({
     where: { ownerId: session?.user?.id },
   })
 
+  const joinedProjectNavItems=await prisma.project.findMany({
+    where:{
+      members:{
+        some:{
+          userId:session?.user?.id
+        }
+      }
+    }
+  })
+
   const project = await prisma.project.findUnique({
     where: { id: activeProjectId },
     include: { tasks: true },
@@ -136,6 +146,39 @@ export default async function ProjectsLayout({
             <SidebarGroupContent>
               <SidebarMenu>
                 {projectNavItems.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    {/* FIXED: We pass the empty Link to `render`, and place the children purely inside the SidebarMenuButton to avoid duplicate React Nodes. */}
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      render={
+                        <Link
+                          id={`sidebar-link-${item.id}`}
+                          href={`/projects/${item.id}`}
+                          className={`flex items-center gap-2 px-4 sm:px-6 py-3 border-b border-border/40 transition-colors rounded-lg border-l-2 w-full ${
+                            activeProjectId === item.id
+                              ? 'bg-muted/30 border-l-primary text-foreground'
+                              : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                          }`}
+                        />
+                      }
+                    >
+                      {activeProjectId === item.id ? (
+                        <FolderOpen className="h-4 w-4 shrink-0 text-foreground" />
+                      ) : (
+                        <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="truncate">{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel>Joined Projects</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {joinedProjectNavItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     {/* FIXED: We pass the empty Link to `render`, and place the children purely inside the SidebarMenuButton to avoid duplicate React Nodes. */}
                     <SidebarMenuButton

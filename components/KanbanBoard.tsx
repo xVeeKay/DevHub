@@ -263,30 +263,7 @@ export function KanbanBoard({
                                   }
                                 }}
                               >
-                                <TaskCard task={task}>
-                                  <div className="flex items-start gap-2.5 mb-3">
-                                    <span className="text-[14px] leading-snug font-medium text-zinc-200 group-hover:text-white transition-colors">
-                                      {task.title}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center justify-between mt-auto">
-                                    <div className="flex items-center gap-3">
-                                      <span className="flex items-center gap-1.5 text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                                        <MessageSquare className="size-3.5" />
-                                        <span className="text-[11px] font-medium">
-                                          {task._count?.comments || 0}
-                                        </span>
-                                      </span>
-                                      <span className="flex items-center gap-1.5 text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                                        <AlignLeft className="size-3.5" />
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-center size-6 rounded-full bg-zinc-800 border border-zinc-700 text-[10px] font-bold text-zinc-400">
-                                      <User2 className="size-3.5" />
-                                    </div>
-                                  </div>
-                                </TaskCard>
+                                <TaskCard task={task} />
                               </div>
                             </div>
                           )}
@@ -306,6 +283,7 @@ export function KanbanBoard({
                               id: `temp-${Date.now()}`,
                               title,
                               status: col.id,
+                              createdAt: new Date().toISOString(),
                               _count: { comments: 0 },
                             }
 
@@ -318,11 +296,15 @@ export function KanbanBoard({
                             )
 
                             // 2. Save to database in the background
-                            const newTask=await createTask(projectId, title, col.id)
-                            socket.emit("task-created",{
-                              task:newTask,
-                              projectId
-                            })  
+                            const newTask = await createTask(
+                              projectId,
+                              title,
+                              col.id
+                            )
+                            socket.emit('task-created', {
+                              task: newTask,
+                              projectId,
+                            })
                           }}
                         />
                       </div>

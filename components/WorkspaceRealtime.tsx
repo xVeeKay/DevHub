@@ -46,70 +46,56 @@ export function WorkspaceRealtime({
   return (
     <div className="flex flex-col h-full">
       {/* ===== PRESENCE BAR ===== */}
-      <div className="px-8 py-6">
-  <div className="flex items-center justify-between bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-3 backdrop-blur-sm">
-    
-    {/* LEFT SIDE: Avatars & Title */}
-    <div className="flex items-center gap-6">
-      <div className="flex flex-col">
-        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1 mb-1.5">
-          Active Now
-        </span>
-        <div className="flex items-center gap-2">
-          {members.map((member) => {
-            const isOnline = onlineUsers.includes(member.id);
-            return (
-              <div key={member.id} className="relative group">
-                <div className={`
-                  size-9 rounded-xl border flex items-center justify-center transition-all duration-500
-                  ${isOnline 
-                    ? 'bg-zinc-800 border-indigo-500/50 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.15)] scale-105' 
-                    : 'bg-zinc-900 border-zinc-800 text-zinc-600 opacity-50'
-                  }
-                `}>
-                  <span className="text-xs font-bold uppercase">{member.name?.charAt(0)}</span>
+      <div className="px-8 py-4 flex items-center justify-between border-b border-zinc-900 bg-zinc-950">
+        {/* Left: Presence only */}
+        <div className="flex items-center gap-5">
+          <div className="flex -space-x-2.5">
+            {members.map((member) => {
+              const isOnline = onlineUsers.includes(member.id)
+              return (
+                <div key={member.id} className="relative group">
+                  {/* The Avatar */}
+                  <div
+                    className={`
+                size-9 rounded-full border-2 border-zinc-950 flex items-center justify-center 
+                text-[10px] font-semibold transition-all duration-300
+                ${isOnline ? 'bg-zinc-100 text-zinc-950 scale-105 z-10' : 'bg-zinc-900 text-zinc-600 opacity-50 grayscale'}
+              `}
+                    title={member.name ?? undefined} // Null-safe title
+                  >
+                    {member.name?.charAt(0) ?? '?'} {/* Null-safe initial */}
+                  </div>
+
+                  {/* The Solid (Non-Blinking) Status Indicator */}
                   {isOnline && (
-                    <span className="absolute -top-1 -right-1 size-2.5 bg-indigo-500 rounded-full ring-4 ring-zinc-900 animate-pulse" />
+                    <span className="absolute bottom-0 right-0 z-20 flex h-3 w-3 translate-x-1/4 translate-y-1/4 items-center justify-center rounded-full bg-zinc-950 border-2 border-zinc-950">
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
                   )}
                 </div>
-                {/* Tooltip */}
-                <div className="absolute top-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[10px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none border border-zinc-700">
-                  {member.name}
-                </div>
-              </div>
-            );
-          })}
+              )
+            })}
+          </div>
+          <div className="h-3.5 w-px bg-zinc-800" /> {/* Divider */}
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900/50 rounded-full border border-zinc-800/60">
+            <span className="size-1.5 bg-emerald-500 rounded-full" />{' '}
+            {/* Static small dot */}
+            <span className="text-[11px] text-zinc-400 font-medium tracking-tight">
+              {onlineUsers.length} Online
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Status only */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            <span className="text-[11px] font-medium text-zinc-400 tracking-tight uppercase">
+              Live Sync
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-
-    {/* MIDDLE SECTION: Minimal Stats (Fills the gap) */}
-    <div className="hidden md:flex items-center gap-8">
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] text-zinc-500 uppercase font-medium">Total Tasks</span>
-        <span className="text-sm font-semibold text-zinc-200">{initialColumns.reduce((acc, col) => acc + col.tasks.length, 0)}</span>
-      </div>
-      <div className="h-8 w-px bg-zinc-800" />
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] text-zinc-500 uppercase font-medium">Collaboration</span>
-        <span className="text-sm font-semibold text-zinc-200">{Math.round((onlineUsers.length / members.length) * 100)}%</span>
-      </div>
-    </div>
-
-    {/* RIGHT SIDE: Synchronized Status */}
-    <div className="flex flex-col items-end gap-1.5">
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-        <div className="size-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]" />
-        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-          Synchronized
-        </span>
-      </div>
-      <span className="text-[10px] text-zinc-600 mr-1 font-medium">Last updated: Just now</span>
-    </div>
-
-  </div>
-</div>
-
       {/* ===== YOUR EXISTING BOARD ===== */}
       <KanbanBoard initialColumns={initialColumns} projectId={projectId} />
     </div>
