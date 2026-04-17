@@ -44,7 +44,7 @@ const Navbar = () => {
             </button>
           </a>
 
-          <a href="/signin">
+          <a href="/register">
             <button className="px-4 py-2 rounded-full bg-white text-black text-xs sm:text-sm">
               Register
             </button>
@@ -73,9 +73,11 @@ const Hero = () => {
       </p>
 
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
-        <button className="px-6 py-2.5 rounded-full bg-white text-black text-sm">
+        <a href='/signin'>
+          <button className="px-6 py-2.5 rounded-full bg-white text-black text-sm">
           Get Started
         </button>
+        </a>
 
         <button className="px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-white text-sm">
           View Demo
