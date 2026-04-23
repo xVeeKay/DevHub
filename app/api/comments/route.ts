@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
         },
       },
     })
-
     return NextResponse.json(comment)
   } catch (error) {
     console.error(error)

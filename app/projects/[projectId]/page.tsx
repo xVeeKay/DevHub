@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import Link from 'next/link'
 import { TaskCard } from '@/components/TaskCard'
 import { WorkspaceRealtime } from '@/components/WorkspaceRealtime'
+import { createTaskService } from '@/services/task.service'
 import {
   MessageSquare,
   CircleDashed,
@@ -21,6 +22,7 @@ import {
 import { Suspense } from 'react'
 import { TaskActivity } from '@/components/task-activity'
 import { CreateTaskForm } from '@/components/CreateTaskForm'
+import { getProjectWithTasks } from '@/services/project.service'
 
 export default async function ProjectWorkspace({
   params,
@@ -31,54 +33,13 @@ export default async function ProjectWorkspace({
 }) {
   const { projectId } = await params
   const { taskId } = await searchParams
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: {
-      tasks: {
-        include: {
-          // 1. Get the user assigned to the task
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              // image: true, // Uncomment if you add an image field to User later
-            },
-          },
-          // 2. Get only the most recent comment
-          comments: {
-            take: 1,
-            orderBy: { createdAt: 'desc' },
-            include: {
-              user: {
-                select: { name: true },
-              },
-            },
-          },
-          // 3. Keep your existing comment count
-          _count: {
-            select: { comments: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      },
-      members: {
-        select: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-    },
-  })
+  const project = await getProjectWithTasks(projectId)
 
   if (!project) {
     return <div className="p-8 text-zinc-400">Project not found</div>
   }
 
-  const members=project.members.map((m)=>({
+  const members=project.members.map((m:any)=>({
     id:m.user.id,
     name:m.user.name
   }))
@@ -101,15 +62,12 @@ export default async function ProjectWorkspace({
 
     if (!title.trim()) return
 
-    await prisma.task.create({
-      data: {
-        title,
-        status, // Automatically slots it into the correct pillar
-        projectId: projectId,
-        assignedTo: session.user.id,
-      },
+    await createTaskService({
+      title,
+      status,
+      projectId,
+      userId: session.user.id,
     })
-
     revalidatePath(`/projects/${projectId}`)
   }
 
