@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { redis } from '@/lib/redis'
 
 export async function updateTaskStatus(
   taskId: string,
@@ -14,6 +15,8 @@ export async function updateTaskStatus(
     where: { id: taskId },
     data: { status: newStatus },
   })
+  await redis.del(`project:${projectId}:full`)
+
   revalidatePath(`/projects/${projectId}`)
 }
 
@@ -38,6 +41,7 @@ export async function createTask(
       }
     }
   })
+  await redis.del(`project:${projectId}:full`)
   revalidatePath(`/projects/${projectId}`)
   return task
 }
